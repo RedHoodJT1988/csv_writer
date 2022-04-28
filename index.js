@@ -1,18 +1,17 @@
-import fs, { writeFileSync, appendFileSync } from "fs";
+import { createObjectCsvWriter } from "csv-writer";
 import { createInterface } from "readline";
+import promptModule from "prompt-sync";
 
-const readline = createInterface({
-  input: process.stdin,
-  output: process.stdout,
+const prompt = promptModule();
+const csvWriter = createObjectCsvWriter({
+  path: "./contacts.csv",
+  append: true,
+  header: [
+    { id: "name", title: "NAME" },
+    { id: "phone", title: "PHONE" },
+    { id: "email", title: "EMAIL" },
+  ],
 });
-
-const readLineAsync = (message) => {
-  return new Promise((resolve) => {
-    readline.question(message, (answer) => {
-      resolve(answer);
-    });
-  });
-};
 
 class Person {
   constructor(name = "", number = "", email = "") {
@@ -21,10 +20,10 @@ class Person {
     this.email = email;
   }
   saveToCSV() {
-    const content = `${this.name}, ${this.number}, ${this.email}\n`;
     try {
-      appendFileSync("./contacts.csv", content);
-      console.log(`${this.name} Saved!`);
+      const { name, number, email } = this;
+      csvWriter.writeRecords([{ name, number, email }]);
+      console.log(`{$name} Saved!`);
     } catch (err) {
       console.log(err);
     }
@@ -33,14 +32,13 @@ class Person {
 
 const startApp = async () => {
   const person = new Person();
-  person.name = await readLineAsync("Contact Name: ");
-  person.number = await readLineAsync("Contact Number: ");
-  person.email = await readLineAsync("Contact Email: ");
+  person.name = await prompt("Contact Name: ");
+  person.number = await prompt("Contact Number: ");
+  person.email = await prompt("Contact Email: ");
   person.saveToCSV();
 
-  const response = await readLineAsync("Continue? [y to continue]: ");
+  const response = await prompt("Continue? [y to continue]: ");
   if (response === "y") await startApp();
-  else readline.close();
 };
 
 startApp();
